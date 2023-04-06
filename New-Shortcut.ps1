@@ -1,7 +1,7 @@
 # Shortcut Creator
 # Script in PowerShell to create Windows shortcuts. It can be used to create executable files from PowerShell scripts that do not require a CLI, e.g., background processing scripts and GUI scripts using Microsoft .NET Framework. 
 #
-# 1.0.0
+# 1.0.1
 #
 # Copyright (c) 2023 Thales Pinto
 # This code is licensed under the MIT license.
@@ -141,7 +141,11 @@ if ($PSBoundParameters.ContainsKey("IconPath")) {
     $IconPath = $(Resolve-Path -Path $IconPath).Path
 }
 
-$FinalOutputPath = "$($OutputPath)\$($ShortcutName).lnk"
+if (-Not $ShortcutName.EndsWith(".lnk")) {
+    $FinalOutputPath = "$OutputPath\$ShortcutName.lnk"
+} else {
+    $FinalOutputPath = "$OutputPath\$ShortcutName"
+}
 
 Test-OutputPath($FinalOutputPath)
 
