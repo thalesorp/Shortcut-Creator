@@ -29,7 +29,7 @@ Create a shortcut from an executable file:
 New-Shortcut -SourceFile "C:\Program Files\MyApp\MyApp.exe" -ShortcutName "MyApp" -IconPath "C:\Program Files\MyApp\MyAppIcon.ico"
 ```
 
-Create a shortcut from a URL shortcut file on the current direcotry:
+Create a shortcut from a URL shortcut file on the current directory:
 
 ```powershell
 New-Shortcut -UrlShortcutFile "C:\Users\Me\Links\MyLink.url" -ShortcutName "MyLink" -OutputPath .
