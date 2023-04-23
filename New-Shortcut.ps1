@@ -124,10 +124,10 @@ function Get-OutputPath {
 
 function Get-IconPath {
     if ($IconPath -ne ",0") {
-        $FinalIconPath = $(Resolve-Path -Path $IconPath).Path
-    } else {
-        $FinalIconPath = ",0"
+        return $(Resolve-Path -Path $IconPath).Path
     }
+
+    $FinalIconPath = ",0"
 
     switch ($PSCmdlet.ParameterSetName) {
         "PowerShell script" {
