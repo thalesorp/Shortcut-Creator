@@ -16,7 +16,7 @@ TBD
 
 .NOTES
 Author: Thales Pinto
-Version: 1.1.0
+Version: 1.1.1
 Licence: This code is licensed under the MIT license.
 #>
 
@@ -35,6 +35,12 @@ param (
     })]
     [Alias("Script")]
     [string]$ScriptFile,
+
+    [Parameter(
+        ParameterSetName = "PowerShell script",
+        HelpMessage = "Flag to indicate to pass -NoProfile argument to the PowerShell that will run the script."
+    )]
+    [switch]$NoProfile,
 
     [Parameter(
         Mandatory = $true,
@@ -160,7 +166,11 @@ switch ($PSCmdlet.ParameterSetName) {
     }
     "PowerShell script" {
         $Shortcut.TargetPath = "$env:ComSpec"
-        $Shortcut.Arguments = "/c start /min `"`" pwsh -WindowStyle Hidden -File `"$(Resolve-Path -Path $ScriptFile)`""
+        if ($PSBoundParameters.ContainsKey("NoProfile")) {
+            $Shortcut.Arguments = "/c start /min `"`" pwsh -WindowStyle Hidden -NoProfile -File `"$(Resolve-Path -Path $ScriptFile)`""
+        } else {
+            $Shortcut.Arguments = "/c start /min `"`" pwsh -WindowStyle Hidden -File `"$(Resolve-Path -Path $ScriptFile)`""
+        }
         break
     }
     "URL shortcut" {
