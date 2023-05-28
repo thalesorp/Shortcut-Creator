@@ -16,7 +16,7 @@ TBD
 
 .NOTES
 Author: Thales Pinto
-Version: 1.1.1
+Version: 1.2.0
 Licence: This code is licensed under the MIT license.
 #>
 
@@ -77,7 +77,7 @@ param (
     )]
     [validatescript({
         if (-not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
-        if ((Get-Item $_).Extension -ne ".ico") { throw "The file must be an .ico icon." }
+        if (@(".url", ".ico") -NotContains (Get-Item $_).Extension) { throw "Incompatible file type for icon." }
         $true
     })]
     [Alias("Icon")]
@@ -129,7 +129,10 @@ function Get-OutputPath {
 }
 
 function Get-IconPath {
-    if ($IconPath -ne ",0") {
+    if ($IconPath.EndsWith(".lnk")) {
+        return $(New-Object -comObject WScript.Shell).CreateShortcut($IconPath).IconLocation
+    }
+    if ($IconPath.EndsWith(".ico")) {
         return $(Resolve-Path -Path $IconPath).Path
     }
 
