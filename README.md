@@ -10,7 +10,7 @@ Script in PowerShell to create Windows shortcuts. It can be used to create execu
 - **SourceFile**: Specifies the path (relative or absolute) to the file for which you want to create a shortcut (.lnk).
 - **UrlShortcutFile**: Specifies the path (relative or absolute) to the URL shortcut file that you want to create a standard shortcut (.lnk) from.
 - **Arguments**: Specifies arguments to use when starting the target of the shortcut.
-- **IconPath**: Specifies the path (relative or absolute) to the icon file (.ico) that you want your shortcut to use.
+- **IconPath**: Specifies the path (relative or absolute) to the icon file (.ico or .lnk) that you want your shortcut to use.
 - **Description**: Specifies a description for the shortcut.
 - **ShortcutName**: Specifies the name of the shortcut.
 - **OutputPath**: Specifies the path (relative or absolute) where you want to create the shortcut.
