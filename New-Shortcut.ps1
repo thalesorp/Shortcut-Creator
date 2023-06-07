@@ -16,11 +16,11 @@ TBD
 
 .NOTES
 Author: Thales Pinto
-Version: 1.2.0
+Version: 1.2.1
 Licence: This code is licensed under the MIT license.
 #>
 
-[CmdletBinding(DefaultParameterSetName = "Default Shortcut")]
+[CmdletBinding(DefaultParameterSetName = "Default shortcut")]
 
 param (
     [Parameter(
@@ -29,7 +29,7 @@ param (
         HelpMessage = "Enter the path (relative or absolute) of the .ps1 file that you want to create a runnable shortcut from."
     )]
     [validatescript({
-        if (-not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
+        if (-Not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
         if ((Get-Item $_).Extension -ne ".ps1") { throw "The source file must end with .ps1." }
         $true
     })]
@@ -44,11 +44,11 @@ param (
 
     [Parameter(
         Mandatory = $true,
-        ParameterSetName = "Default Shortcut",
+        ParameterSetName = "Default shortcut",
         HelpMessage = "Enter the path (relative or absolute) to the file for which you want to create a shortcut (.lnk)."
     )]
     [validatescript({
-        if (-not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
+        if (-Not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
         $true
     })]
     [string]$SourceFile,
@@ -59,7 +59,7 @@ param (
         HelpMessage = "Enter the path (relative or absolute) to the URL shortcut file that you want to create a standard shortcut (.lnk) from."
     )]
     [validatescript({
-        if (-not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
+        if (-Not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
         if ((Get-Item $_).Extension -ne ".url") { throw "The source file must end with .url." }
         $true
     })]
@@ -67,7 +67,7 @@ param (
 
     [Parameter(
         Mandatory = $false,
-        ParameterSetName = "Default Shortcut"
+        ParameterSetName = "Default shortcut"
     )]
     [string]$Arguments,
 
@@ -76,7 +76,7 @@ param (
         HelpMessage = "Enter the path (relative or absolute) to the icon file (.ico) that you want your shortcut to use."
     )]
     [validatescript({
-        if (-not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
+        if (-Not (Test-Path -Path (Get-Item $_) -PathType Leaf)) { throw "File does not exist." }
         if (@(".url", ".ico") -NotContains (Get-Item $_).Extension) { throw "Incompatible file type for icon." }
         $true
     })]
@@ -93,7 +93,7 @@ param (
 
     [Parameter(Mandatory = $false)]
     [validatescript({
-        if (-not (Test-Path -Path $_ -PathType Container)) { throw "Invalid path." }
+        if (-Not (Test-Path -Path $_ -PathType Container)) { throw "Invalid path." }
         $true
     })]
     [string]$OutputPath = $pwd
@@ -101,6 +101,7 @@ param (
 
 function Get-OutputPath {
     $FinalOutputPath = $OutputPath
+
     if (-Not ([System.IO.Path]::IsPathRooted($OutputPath))) {
         $FinalOutputPath = $(Resolve-Path -Path $OutputPath)
     }
@@ -108,21 +109,6 @@ function Get-OutputPath {
     $FinalOutputPath = Join-Path $OutputPath -ChildPath "$ShortcutName"
     if (-Not $ShortcutName.EndsWith(".lnk")) {
         $FinalOutputPath += ".lnk"
-    }
-
-    if (Test-Path -Path $FinalOutputPath -PathType Leaf) {
-        Write-Warning "Shortcut already exists."
-        $Question = "Do you want to replace it?"
-        $Choices = @(
-            [System.Management.Automation.Host.ChoiceDescription]::new("&Yes", "Replace the old shortcut with the new one")
-            [System.Management.Automation.Host.ChoiceDescription]::new("&No", "No changes will be made")
-        )
-
-        $Decision = $Host.UI.PromptForChoice("", $Question, $Choices, 1)
-
-        if ($Decision -eq 1) {
-            exit
-        }
     }
 
     return $FinalOutputPath
@@ -156,39 +142,68 @@ function Get-IconPath {
     return $FinalIconPath
 }
 
-$FinalOutputPath = Get-OutputPath
-$FinalIconPath = Get-IconPath
+function Test-OutputPathAvailability {
+    param (
+        [string]$Path
+    )
 
-$Shortcut = $(New-Object -comObject WScript.Shell).CreateShortcut($FinalOutputPath)
+    if (-Not (Test-Path -Path $Path -PathType Leaf)) {
+        return $True
+    }
+
+    Write-Warning "Shortcut already exists."
+    $Question = "Do you want to replace it?"
+    $Choices = @(
+        [System.Management.Automation.Host.ChoiceDescription]::new("&Yes", "Replace the old shortcut with the new one")
+        [System.Management.Automation.Host.ChoiceDescription]::new("&No", "No changes will be made")
+    )
+
+    $Decision = $Host.UI.PromptForChoice("", $Question, $Choices, 1)
+
+    if ($Decision -eq 0) {
+        return $True
+    }
+
+    return $False
+}
+
+$FinalOutputPath = Get-OutputPath
+if (-Not (Test-OutputPathAvailability($FinalOutputPath))) {
+    Write-Warning "Shortcut not created."
+    exit
+}
 
 switch ($PSCmdlet.ParameterSetName) {
-    "Default Shortcut" {
-        $Shortcut.TargetPath = $(Resolve-Path -Path $SourceFile)
-        $Shortcut.Arguments = $Arguments
+    "Default shortcut" {
+        $TargetPath = $(Resolve-Path -Path $SourceFile)
+        $ShortcutArguments = $Arguments
         break
     }
     "PowerShell script" {
-        $Shortcut.TargetPath = "$env:ComSpec"
+        $TargetPath = "$env:ComSpec"
         if ($PSBoundParameters.ContainsKey("NoProfile")) {
-            $Shortcut.Arguments = "/c start /min `"`" pwsh -WindowStyle Hidden -NoProfile -File `"$(Resolve-Path -Path $ScriptFile)`""
+            $ShortcutArguments = "/c start /min `"`" pwsh -WindowStyle Hidden -NoProfile -File `"$(Resolve-Path -Path $ScriptFile)`""
         } else {
-            $Shortcut.Arguments = "/c start /min `"`" pwsh -WindowStyle Hidden -File `"$(Resolve-Path -Path $ScriptFile)`""
+            $ShortcutArguments = "/c start /min `"`" pwsh -WindowStyle Hidden -File `"$(Resolve-Path -Path $ScriptFile)`""
         }
         break
     }
     "URL shortcut" {
-        $Shortcut.TargetPath = "$env:SystemRoot\explorer.exe"
-        $Shortcut.Arguments = (New-Object -ComObject WScript.Shell).CreateShortcut($UrlShortcutFile).TargetPath
+        $TargetPath = "$env:SystemRoot\explorer.exe"
+        $ShortcutArguments = (New-Object -ComObject WScript.Shell).CreateShortcut($UrlShortcutFile).TargetPath
         break
     }
 }
 
-$Shortcut.IconLocation = $FinalIconPath
+$Shortcut = $(New-Object -comObject WScript.Shell).CreateShortcut($FinalOutputPath)
+$Shortcut.TargetPath = $TargetPath
+$Shortcut.Arguments = $ShortcutArguments
+$Shortcut.IconLocation = Get-IconPath
 $Shortcut.Description = $Description
 $Shortcut.Save()
 
-if (-not (Test-Path $Shortcut.FullName)){
-    Write-Error "Failed to create shortcut."
+if (-Not (Test-Path $Shortcut.FullName)){
+    Write-Error "Failed to create shortcut. Try again."
     exit
 }
 
